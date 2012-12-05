@@ -17,7 +17,7 @@ import play.api.libs.ws.WS
  * to a different domain than ours.
  */
 trait DocumentCloudProxyController extends BaseController {
-  val DocumentCloudApiProjectsUrl = "https://www.documentcloud.org/api/projects.json"
+  val DocumentCloudApiProjectsUrl = "https://apdocs.inside.ap.org/api/projects.json"
 
   def projects() = authorizedAction(anyUser)(user => authorizedProjects(user)(_: Request[AnyContent], _: Connection))
 

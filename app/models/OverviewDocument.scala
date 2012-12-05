@@ -64,7 +64,7 @@ object OverviewDocument {
 
     /** URL to view the document on DocumentCloud */
     override def url(pattern: String) : String = {
-      "https://www.documentcloud.org/documents/" + documentcloudId
+      "https://apdocs.inside.ap.org/documents/" + documentcloudId
     }
   }
 

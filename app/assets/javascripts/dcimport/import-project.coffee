@@ -18,5 +18,5 @@ dcimport.import_project_with_login = (div) ->
 
   $(div).on 'click', 'a', (e) ->
     e.preventDefault()
-    deferred = dcimport.request_json_with_login('https://www.documentcloud.org/api/projects.json', div)
+    deferred = dcimport.request_json_with_login('https://apdocs.inside.ap.org/api/projects.json', div)
     deferred.done(show_data)

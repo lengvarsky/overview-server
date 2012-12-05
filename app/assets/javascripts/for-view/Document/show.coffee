@@ -4,7 +4,7 @@ SIDEBAR_KEY = 'views.Document.show.sidebar'
 
 documentcloud_id_to_url = (id) ->
   sidebar = get_show_sidebar()
-  "https://www.documentcloud.org/documents/#{id}?sidebar=#{sidebar && 'true' || 'false'}"
+  "https://apdocs.inside.ap.org/documents/#{id}?sidebar=#{sidebar && 'true' || 'false'}"
 
 get_show_sidebar = () ->
   localStorage.getItem(SIDEBAR_KEY) == "true"

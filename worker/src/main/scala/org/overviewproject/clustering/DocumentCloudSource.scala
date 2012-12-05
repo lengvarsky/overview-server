@@ -44,7 +44,7 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever,
   private var numDocumentsReturned = 0
 
   private def pageQuery(pageNum: Int, myPageSize: Int = pageSize) = {
-    val searchURL = "https://www.documentcloud.org/api/search.json?per_page=" + myPageSize +
+    val searchURL = "https://apdocs.inside.ap.org/api/search.json?per_page=" + myPageSize +
       "&page=" + pageNum + "&q=" + URLEncoder.encode(query, "UTF-8")
     (documentCloudUserName, documentCloudPassword) match {
       case (Some(n), Some(p)) => new PrivateDocumentAtURL(searchURL, n, p)
