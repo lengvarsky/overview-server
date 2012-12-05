@@ -98,7 +98,7 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever,
 
       // capped returned documents at maxDocuments
       if (numDocumentsReturned < maxDocuments) {
-        val dcDocumentURL = "https://www.documentcloud.org/api/documents/" + doc.id + ".txt"
+        val dcDocumentURL = doc.resources.text // "http://apdocs.inside.ap.org/asset_store/documents/" + doc.id + ".txt"
 
         if (doc.access == "public")
           f(new DCDocumentAtURL(doc.title, doc.id, dcDocumentURL)) // public doc, just call f immediately
