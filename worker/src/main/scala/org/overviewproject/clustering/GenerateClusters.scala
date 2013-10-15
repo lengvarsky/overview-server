@@ -49,7 +49,6 @@ object BuildDocTree {
   def apply(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     var (nonEmptyDocs, emptyDocs) = gatherEmptyDocs(docVecs)
 
-    //applyKMeans(nonEmptyDocs, docVecs, progAbort)             // experimental
     applyKMeansComponents(nonEmptyDocs, docVecs, progAbort)    
         
     SuggestedTags.makeSuggestedTagsForTree(docVecs, nonEmptyDocs) // create a descriptive label for each node

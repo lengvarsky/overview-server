@@ -185,10 +185,10 @@ trait MessageServiceComponentImpl extends MessageServiceComponent {
     private val ConnectionRetryPause = 2000
     private val MaxConnectionAttempts = 5
 
-    private val BrokerUri: String = Configuration.messageQueue.brokerUri
-    private val Username: String = Configuration.messageQueue.username
-    private val Password: String = Configuration.messageQueue.password
-    private val QueueName: String = Configuration.messageQueue.queueName
+    private val BrokerUri: String = Configuration.messageQueue.getString("broker_uri")
+    private val Username: String = Configuration.messageQueue.getString("username")
+    private val Password: String = Configuration.messageQueue.getString("password")
+    private val QueueName: String = Configuration.messageQueue.getString("queue_name")
 
     private var connection: Connection = _
     private var consumer: MessageConsumer = _
