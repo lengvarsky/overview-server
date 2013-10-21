@@ -14,6 +14,8 @@ define [
         'views.DocumentSet.index.ImportOptions.lang.label': 'lang.label'
         'views.DocumentSet.index.ImportOptions.supplied_stop_words.label': 'supplied_stop_words.label'
         'views.DocumentSet.index.ImportOptions.supplied_stop_words.help': 'supplied_stop_words.help'
+        'views.DocumentSet.index.ImportOptions.important_words.label': 'important_words.label'
+        'views.DocumentSet.index.ImportOptions.important_words.help': 'important_words.help'
         'views.DocumentSet.index.ImportOptions.click_for_help': 'click_for_help'
 
     afterEach ->
@@ -25,12 +27,13 @@ define [
         model.supportedLanguages = [{code:'en',name:'English'},{code:'fr',name:'French'},{code:'de',name:'German'},{code:'es',name:'Spanish'},{code:'sv',name:'Swedish'}]
         view = new OptionsView({ model: model })
 
-      it 'should not render the excluded option', ->
+      it 'should not render the excluded options', ->
         expect(view.$('[name=supplied_stop_words]').length).toEqual(0)
+        expect(view.$('[name=important_words]').length).toEqual(0)
 
     describe 'with all options', ->
       beforeEach ->
-        model = new Backbone.Model({ split_documents: false, lang: 'en', supplied_stop_words: '' })
+        model = new Backbone.Model({ split_documents: false, lang: 'en', supplied_stop_words: '', important_words: ''})
         model.supportedLanguages = [{code:'en',name:'English'},{code:'fr',name:'French'},{code:'de',name:'German'},{code:'es',name:'Spanish'},{code:'sv',name:'Swedish'}]
         view = new OptionsView({ model: model })
 
@@ -60,3 +63,6 @@ define [
 
       it 'should start with supplied_stop_words matching supplied_stop_words', ->
         expect(view.$('[name=supplied_stop_words]').val()).toEqual(model.get('supplied_stop_words'))
+
+      it 'should start with important_words matching important_words', ->
+        expect(view.$('[name=important_words]').val()).toEqual(model.get('important_words'))

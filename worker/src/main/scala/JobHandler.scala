@@ -22,6 +22,7 @@ import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.util.{ DocumentProducerFactory, ExceptionStatusMessage, JobRestarter, Logger, ThrottledProgressReporter }
 import org.overviewproject.util.Progress._
 import org.overviewproject.util.SearchIndex
+import org.overviewproject.nlp.DocumentVectorTypes.TermWeight
 
 object JobHandler {
   // Run a single job
@@ -180,6 +181,17 @@ object JobHandler {
       s"Creating DocumentSet: ${job.documentSetId} Title: ${ds.title} $query $uploadId Splitting: ${job.splitDocuments}".trim
     }.getOrElse(s"Creating DocumentSet: Could not load document set id: ${job.documentSetId}")
 
+    // Converts "important words" options string into a map of regex->weight
+    // splits on runs of spaces, fixed weight
+    def makeEmphasizedWords(s:Option[String]) : Map[String, TermWeight] = {
+      if (s.isEmpty) {
+        Map[String,TermWeight]()
+      } else {
+        val extraWeight:TermWeight = 5
+        "[ \t\n\r\u00A0]+".r.replaceAllIn(s.get, " ").split(' ').map(w => (w, extraWeight)).toMap
+      }
+    }
+
     Logger.info(documentSetInfo(documentSet))
 
     documentSet.map { ds =>
@@ -188,6 +200,7 @@ object JobHandler {
       val opts = new DocumentSetIndexerOptions
       opts.lang = job.lang
       opts.suppliedStopWords = job.suppliedStopWords
+      opts.emphasizedWordsRegex = makeEmphasizedWords(job.importantWords)
       val indexer = new DocumentSetIndexer(nodeWriter, opts, progressFn)
       val producer = DocumentProducerFactory.create(job, ds, indexer, progressFn)
 
