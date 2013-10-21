@@ -13,7 +13,7 @@ import scala.util._
 import com.jolbox.bonecp._
 
 import org.overviewproject.clone.CloneDocumentSet
-import org.overviewproject.clustering.DocumentSetIndexer
+import org.overviewproject.clustering.{DocumentSetIndexer, DocumentSetIndexerOptions}
 import org.overviewproject.database.{ SystemPropertiesDatabaseConfiguration, DataSource, DB }
 import org.overviewproject.database.Database
 import org.overviewproject.persistence._
@@ -185,7 +185,10 @@ object JobHandler {
     documentSet.map { ds =>
       val nodeWriter = new NodeWriter(job.documentSetId)
 
-      val indexer = new DocumentSetIndexer(nodeWriter, job.lang, job.suppliedStopWords, progressFn)
+      val opts = new DocumentSetIndexerOptions
+      opts.lang = job.lang
+      opts.suppliedStopWords = job.suppliedStopWords
+      val indexer = new DocumentSetIndexer(nodeWriter, opts, progressFn)
       val producer = DocumentProducerFactory.create(job, ds, indexer, progressFn)
 
       producer.produce()
