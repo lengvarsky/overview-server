@@ -14,6 +14,7 @@ import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
 import org.squeryl.Table
 import org.overviewproject.tree.orm.DocumentSetComponent
 import org.overviewproject.tree.orm.stores.BaseNodeStore
+import org.overviewproject.util.Logger
 
 /**
  * Deletes all data associated with a document set in the database
@@ -31,7 +32,12 @@ class DocumentSetCleaner {
     val nodeStore = BaseNodeStore(nodes, trees)
     NodeDocumentStore.deleteByDocumentSet(documentSetId)
     nodeStore.deleteByDocumentSet(documentSetId)
-    deleteByDocumentSetId(trees, documentSetId)
+    val n = deleteByDocumentSetId(trees, documentSetId)
+    Logger.info(s"Number of deleted trees: $n")
+    
+    DocumentSetComponentFinder(trees).byDocumentSet(documentSetId).headOption.foreach { t =>
+      Logger.info(s"Found tree: ${t.id} ${t.documentSetId} via $documentSetId")
+    }
   }
 
   private def removeDocumentData(documentSetId: Long): Unit = {
