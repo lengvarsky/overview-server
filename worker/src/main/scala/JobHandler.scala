@@ -113,11 +113,6 @@ object JobHandler {
 
     } catch {
       case e: Exception => reportError(j, e)
-      case t: Throwable => { // Rethrow (and die) if we get non-Exception throwables, such as java.lang.error
-        reportError(j, t)
-        DB.close()
-        throw (t)
-      }
     }
   }
 
