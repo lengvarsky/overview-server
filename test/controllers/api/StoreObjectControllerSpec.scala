@@ -1,6 +1,7 @@
 package controllers.api
 
 import play.api.libs.json.{Json,JsValue}
+import play.api.libs.iteratee.Enumerator
 import scala.concurrent.Future
 
 import controllers.backend.{StoreBackend,StoreObjectBackend}
@@ -89,14 +90,17 @@ class StoreObjectControllerSpec extends ApiControllerSpecification {
     "#create" should {
       trait CreateScope extends BaseScope {
         val storeId = 123L
-        mockStoreBackend.showOrCreate(request.apiToken.token) returns Future.successful(Store(storeId, "api-tok3n", Json.obj()))
+        // we can't test that showOrCreate() is called with apiToken, because
+        // we can't pass apiToken to the body parser
+        mockStoreBackend.showOrCreate(anyString) returns Future.successful(Store(storeId, "api-tok3n", Json.obj()))
 
         val body: JsValue = Json.obj(
           "indexedLong" -> 4L,
           "indexedString" -> "foo",
           "json" -> Json.obj("foo" -> "bar")
         )
-        override lazy val result = controller.create()(fakeJsonRequest(body))
+        lazy val jsonRequest = fakeJsonRequest(body)
+        override lazy val result = controller.create()(jsonRequest)
       }
 
       trait CreateManyScope extends CreateScope {

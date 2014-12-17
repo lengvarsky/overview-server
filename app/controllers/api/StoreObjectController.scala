@@ -1,9 +1,13 @@
 package controllers.api
 
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.json.{JsObject,JsPath,JsValue,Reads}
+import play.api.libs.iteratee.Iteratee
+import play.api.libs.json.{JsObject,JsPath,JsValue,Json,Reads}
+import play.api.mvc.{Action,BodyParser,RequestHeader,Result}
+import play.api.mvc.BodyParsers.parse
 import scala.concurrent.Future
 import scala.reflect.classTag
+import scala.util.Try
 
 import controllers.backend.{StoreBackend,StoreObjectBackend}
 import controllers.auth.ApiAuthorizedAction
@@ -11,6 +15,8 @@ import controllers.auth.Authorities.{anyUser,userOwningStoreObject}
 import org.overviewproject.models.StoreObject
 
 trait StoreObjectController extends ApiController {
+  protected val MaxRequestSize: Int = 2 * 1024 * 1024 // 2MB
+
   protected val storeBackend: StoreBackend
   protected val storeObjectBackend: StoreObjectBackend
 
@@ -21,28 +27,19 @@ trait StoreObjectController extends ApiController {
     } yield Ok(views.json.api.StoreObject.index(storeObjects))
   }
 
-  def create = ApiAuthorizedAction(anyUser).async { request =>
-    val body: JsValue = request.body.asJson.getOrElse(JsObject(Seq()))
-
-    body.asOpt(StoreObjectController.createJsonReader) match {
-      case Some(attributes) => {
+  def create = ApiAuthorizedAction(anyUser).async(StoreObjectController.createJsonBodyParser) { request =>
+    request.body match {
+      case StoreObjectController.CreateAttributesSingle(attributes) => {
         for {
           store <- storeBackend.showOrCreate(request.apiToken.token)
           storeObject <- storeObjectBackend.create(store.id, attributes)
         } yield Ok(views.json.api.StoreObject.show(storeObject))
       }
-      case None => {
-        body.asOpt(StoreObjectController.createArrayJsonReader) match {
-          case Some(attributesArray) => {
-            for {
-              store <- storeBackend.showOrCreate(request.apiToken.token)
-              storeObjects <- storeObjectBackend.createMany(store.id, attributesArray.toSeq)
-            } yield Ok(views.json.api.StoreObject.index(storeObjects))
-          }
-          case None => Future.successful(BadRequest(jsonError(
-            """You must POST a JSON object with "indexedLong" (Number or null), "indexedString" (String or null) and "json" (possibly-empty Object). You may post an Array of such objects to create many objects with one request."""
-          )))
-        }
+      case StoreObjectController.CreateAttributesMultiple(attributesArray) => {
+        for {
+          store <- storeBackend.showOrCreate(request.apiToken.token)
+          storeObjects <- storeObjectBackend.createMany(store.id, attributesArray.toSeq)
+        } yield Ok(views.json.api.StoreObject.index(storeObjects))
       }
     }
   }
@@ -105,7 +102,31 @@ object StoreObjectController extends StoreObjectController {
     )(ctor)
   }
 
-  private val createJsonReader = createReader(StoreObject.CreateAttributes.apply _)
+  sealed trait CreateAttributesOrArray
+  private case class CreateAttributesSingle(attributes: StoreObject.CreateAttributes) extends CreateAttributesOrArray
+  private case class CreateAttributesMultiple(attributesArray: Array[StoreObject.CreateAttributes]) extends CreateAttributesOrArray
+
+  // We want to parse large JSON, with a custom error message
+  // See https://github.com/playframework/playframework/issues/3039
+  private val createJsonBodyParser = new BodyParser[CreateAttributesOrArray] {
+    override def apply(v1: RequestHeader): Iteratee[Array[Byte], Either[Result,CreateAttributesOrArray]] = {
+      val textIteratee: Iteratee[Array[Byte], Either[Result,String]] = parse.tolerantText(MaxRequestSize)(v1)
+      textIteratee.map[Either[Result,CreateAttributesOrArray]] { textEither: Either[Result,String] =>
+        val attrsOption: Option[CreateAttributesOrArray] = textEither.right.toOption.flatMap { text =>
+          Try(Json.parse(text)).toOption // Option[JsValue]
+            .flatMap { json =>
+              json.asOpt(createJsonReader).map(CreateAttributesSingle(_))
+                .orElse(json.asOpt(createArrayJsonReader).map(CreateAttributesMultiple(_)))
+            } // Option[CreateAttributesOrArray]
+        }
+        attrsOption.toRight(BadRequest(jsonError(
+            """You must POST a JSON object with "indexedLong" (Number or null), "indexedString" (String or null) and "json" (possibly-empty Object). You may post an Array of such objects to create many objects with one request."""
+          )))
+      }
+    }
+  }
+
+  private val createJsonReader: Reads[StoreObject.CreateAttributes] = createReader(StoreObject.CreateAttributes.apply _)
   private val updateJsonReader = createReader(StoreObject.UpdateAttributes.apply _)
   private val deleteArrayJsonReader: Reads[Array[Long]] = {
     Reads.ArrayReads[Long]
